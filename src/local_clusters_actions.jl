@@ -12,7 +12,7 @@ function create_first_local_cluster(group::local_group)
     cluster = local_cluster(splittable, group.model_hyperparams.total_dim,
         cp.suff_statistics[1][1].N,
         cpl.suff_statistics[1][1].N,
-        cpl.suff_statistics[1][1].N)
+        cpl.suff_statistics[1][1].N,1)
     @sync for i in (nworkers()== 0 ? procs() : workers())
         @spawnat i split_first_cluster_worker!(group)
     end
@@ -34,7 +34,7 @@ function create_outlier_local_cluster(group::local_group,outlier_params)
     cluster = local_cluster(splittable, group.model_hyperparams.total_dim,
         cp.suff_statistics[1][1].N,
         cpl.suff_statistics[1][1].N,
-        cpl.suff_statistics[1][1].N)
+        cpl.suff_statistics[1][1].N,0)
     # @sync for i in (nworkers()== 0 ? procs() : workers())
     #     @spawnat i split_first_cluster_worker!(group)
     # end
@@ -272,18 +272,19 @@ function split_cluster_local_worker!(labels, sub_labels, points,indices::Vector{
 end
 
 function split_cluster_local!(group::local_group, cluster::local_cluster, index::Int64, new_index::Int64)
-
+    global next_cluster_num
     l_split = copy_local_cluster(cluster)
     l_split.cluster_params = create_splittable_from_params(cluster.cluster_params.cluster_params_r, group.model_hyperparams.α)
     cluster.cluster_params = create_splittable_from_params(cluster.cluster_params.cluster_params_l, group.model_hyperparams.α)    
     l_split.points_count = sum([post_kernel(x[2],global_time)*x[1].N for x in l_split.cluster_params.cluster_params.suff_statistics])
     cluster.points_count = sum([post_kernel(x[2],global_time)*x[1].N for x in cluster.cluster_params.cluster_params.suff_statistics])
+    l_split.cluster_num = next_cluster_num
+    next_cluster_num += 1
     group.local_clusters[new_index] = l_split
 end
 
 function merge_clusters_worker!(group::local_group,indices::Vector{Int64}, new_indices::Vector{Int64})
     labels = localpart(group.labels)
-    sub_labels = localpart(group.labels_subcluster)
 
     for (i,index) in enumerate(indices)
         cluster_sub_labels = @view localpart(group.labels_subcluster)[labels .== index]
@@ -301,8 +302,8 @@ function merge_clusters!(group::local_group,index_l::Int64, index_r::Int64)
     group.local_clusters[index_l].cluster_params = new_splittable_cluster
     group.local_clusters[index_l].points_count += group.local_clusters[index_r].points_count
     group.local_clusters[index_r].points_count = 0
-    group.local_clusters[index_r].cluster_params.cluster_params.suff_statistics.N = 0
     group.local_clusters[index_r].cluster_params.splittable = false
+    println("Merged: " * string(index_r))
 end
 
 
@@ -377,7 +378,6 @@ function check_and_merge!(group::local_group, final::Bool)
         if outlier_mod > 0 && i == 1
             continue
         end
-        sum([post_kernel(x[2],global_time)*x[1].N for x in group.local_clusters[i].cluster_params.cluster_params.suff_statistics])
         for j=i+1:length(group.local_clusters)
             if  (group.local_clusters[i].cluster_params.splittable == true &&
                     group.local_clusters[j].cluster_params.splittable == true &&
@@ -435,7 +435,7 @@ function remove_empty_clusters_worker!(labels, pts_count)
     labels = localpart(labels)
     removed = 0
     for (index, count) in enumerate(pts_count)
-        if count == 0
+        if count < 1
             labels[labels .> index - removed] .-= 1
             removed += 1
         end
@@ -450,6 +450,8 @@ function remove_empty_clusters!(group::local_group)
         push!(pts_count, cluster.points_count)
         if cluster.points_count >= 1 || (outlier_mod > 0 && index == 1) || (outlier_mod > 0 && index == 2 && length(group.local_clusters) == 2)
             push!(new_vec,cluster)
+        else
+            println("removing cluster:" * string(index))        
         end
     end
     @sync for i in (nworkers()== 0 ? procs() : workers())

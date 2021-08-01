@@ -88,7 +88,7 @@ function suff_stats_aggregation(suff_statistics_l::Vector{Tuple{sufficient_stati
     max_age = maximum(vcat([x[2] for x in suff_statistics_l],[x[2] for x in suff_statistics_r]))
     index_l,index_r = 1,1
     cur_time = 0
-    suff_stats = []
+    suff_stats = Vector{Tuple{sufficient_statistics,Number}}()
     while cur_time <= max_age
         ss_vector = []
         if index_l <= length(suff_statistics_l) && suff_statistics_l[index_l][2] == cur_time

@@ -67,6 +67,7 @@ function init_first_clusters!(dp_model::dp_parallel_sampling, initial_cluster_co
         push!(dp_model.group.local_clusters, create_first_local_cluster(dp_model.group))
     end
     @sync update_suff_stats_posterior!(dp_model.group)
+    global next_cluster_num = 2
     sample_clusters!(dp_model.group,false)
     broadcast_cluster_params([create_thin_cluster_params(x) for x in dp_model.group.local_clusters],[1.0])
 end
@@ -418,34 +419,34 @@ Running model:
 ...
 ```
 """
-function run_model_from_checkpoint(filename)
-    println("Loading Model:")
-    @time @load filename group hyperparams iter total_time global_params
-    println("Including params")
-    include(global_params)
-    println("Loading data:")
-    @time data = distribute((Float32.(load_data(data_path, prefix = data_prefix))))
-    println("Creating model:")
-    # @time begin
-    group.labels = distribute(group.labels)
-    group.labels_subcluster = distribute(group.labels_subcluster)
-    dp_model = create_model_from_saved_data(group, data, hyperparams)
-    # end
-    global leader_dict = get_node_leaders_dict()
-    println("Node Leaders:")
-    println(leader_dict)
-    @eval @everywhere global hard_clustering = $hard_clustering
-    println("Running model:")
-    return run_model(dp_model, iter+1, global_params, total_time)
-end
+# function run_model_from_checkpoint(filename)
+#     println("Loading Model:")
+#     @time @load filename group hyperparams iter total_time global_params
+#     println("Including params")
+#     include(global_params)
+#     println("Loading data:")
+#     @time data = distribute((Float32.(load_data(data_path, prefix = data_prefix))))
+#     println("Creating model:")
+#     # @time begin
+#     group.labels = distribute(group.labels)
+#     group.labels_subcluster = distribute(group.labels_subcluster)
+#     dp_model = create_model_from_saved_data(group, data, hyperparams)
+#     # end
+#     global leader_dict = get_node_leaders_dict()
+#     println("Node Leaders:")
+#     println(leader_dict)
+#     @eval @everywhere global hard_clustering = $hard_clustering
+#     println("Running model:")
+#     return run_model(dp_model, iter+1, global_params, total_time)
+# end
 
 
-function save_model(model, path, filename, iter, total_time, global_params)
-    filename = path * filename * "_"*string(iter)*".jld2"
-    hyperparams = model.model_hyperparams
-    group = create_pts_less_group(model.group)
-    @save filename group hyperparams iter total_time global_params
-end
+# function save_model(model, path, filename, iter, total_time, global_params)
+#     filename = path * filename * "_"*string(iter)*".jld2"
+#     hyperparams = model.model_hyperparams
+#     group = create_pts_less_group(model.group)
+#     @save filename group hyperparams iter total_time global_params
+# end
 
 
 function calculate_posterior(model::dp_parallel_sampling)
@@ -660,4 +661,11 @@ function run_model_streaming(dp_model,iters, cur_time, new_data=nothing)
     end
     prev_iter+= iters+1
     return dp_model
+end
+
+
+function get_labels(dp_model)
+    labels = Array(dp_model.group.labels)
+    translation = [x.cluster_num for x in dp_model.group.local_clusters]
+    return translation[labels]
 end

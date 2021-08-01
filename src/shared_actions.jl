@@ -12,7 +12,9 @@ end
 function merge_clusters_to_splittable(cpl::cluster_parameters,cpr::cluster_parameters, α::Float32)
     suff_stats = suff_stats_aggregation(cpl.suff_statistics,cpr.suff_statistics)
     posterior_hyperparams = calc_posterior(cpl.hyperparams, suff_stats)
-    lr_weights = rand(Dirichlet(Float64.([cpl.suff_statistics.N + (α / 2), cpr.suff_statistics.N + (α / 2)])))
+    cpln = sum([post_kernel(x[2],global_time)*x[1].N for x in cpl.suff_statistics])
+    cprn = sum([post_kernel(x[2],global_time)*x[1].N for x in cpr.suff_statistics])
+    lr_weights = rand(Dirichlet(Float64.([cpln + (α / 2), cprn + (α / 2)])))
     cp = cluster_parameters(cpl.hyperparams, cpl.distribution, suff_stats, posterior_hyperparams)
     return splittable_cluster_params(cp,cpl,cpr,lr_weights, false, ones(burnout_period+5)*-Inf)
 end

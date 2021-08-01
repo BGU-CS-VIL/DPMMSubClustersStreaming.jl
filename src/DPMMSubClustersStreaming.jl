@@ -9,7 +9,6 @@ using StatsBase
 using Distributions
 using SpecialFunctions
 using LinearAlgebra
-using JLD2
 using Clustering
 using KernelFunctions
 
@@ -34,7 +33,6 @@ include("dp-parallel-sampling.jl")
 include("data_generators.jl")
 
 
-export generate_gaussian_data, generate_mnmm_data, dp_parallel_sampling, dp_parallel, run_model_from_checkpoint, save_model, calculate_posterior, fit, get_labels_histogram,run_model_streaming,dp_parallel_streaming
-
+export generate_gaussian_data, generate_mnmm_data, dp_parallel_sampling, dp_parallel, run_model_from_checkpoint, save_model, calculate_posterior, fit, get_labels_histogram,run_model_streaming,dp_parallel_streaming,get_labels
 
 end # module
