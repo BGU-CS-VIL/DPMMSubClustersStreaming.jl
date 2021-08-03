@@ -303,7 +303,7 @@ function merge_clusters!(group::local_group,index_l::Int64, index_r::Int64)
     group.local_clusters[index_l].points_count += group.local_clusters[index_r].points_count
     group.local_clusters[index_r].points_count = 0
     group.local_clusters[index_r].cluster_params.splittable = false
-    println("Merged: " * string(index_r))
+    # println("Merged: " * string(index_r))
 end
 
 
@@ -450,8 +450,8 @@ function remove_empty_clusters!(group::local_group)
         push!(pts_count, cluster.points_count)
         if cluster.points_count >= 1 || (outlier_mod > 0 && index == 1) || (outlier_mod > 0 && index == 2 && length(group.local_clusters) == 2)
             push!(new_vec,cluster)
-        else
-            println("removing cluster:" * string(index))        
+        # else
+        #     println("removing cluster:" * string(index))        
         end
     end
     @sync for i in (nworkers()== 0 ? procs() : workers())
