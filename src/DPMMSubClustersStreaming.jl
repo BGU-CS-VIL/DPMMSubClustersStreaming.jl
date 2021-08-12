@@ -20,10 +20,12 @@ include("ds.jl")
 #Priors:
 include("priors/niw.jl")
 include("priors/multinomial_prior.jl")
+include("priors/compact_mnm_prior.jl")
 
 #Distributions:
 include("distributions/mv_gaussian.jl")
 include("distributions/multinomial_dist.jl")
+include("distributions/compact_mnm_dist.jl")
 
 include("utils.jl")
 include("shared_actions.jl")
