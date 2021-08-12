@@ -31,6 +31,7 @@ mutable struct thin_cluster_params{T <: distribution_sample}
     l_dist::T
     r_dist::T
     lr_weights::AbstractArray{Float32, 1}
+    posterior_hyperparams
 end
 
 

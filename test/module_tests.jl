@@ -103,21 +103,21 @@ end
 
 
 # @testset "Streaming Data Multinomial 2" begin
-    @everywhere Random.seed!(12345)
-    x,labels,clusters = generate_mnmm_data(10^4,100,20,50)
-    parts = 10
-    xs = [x[:,i:parts:end] for i=1:parts]
-    labelss = [labels[i:parts:end] for i=1:parts]
-    hyper_params = DPMMSubClustersStreaming.multinomial_hyper(ones(Float32,100))
-    dp = dp_parallel_streaming(xs[1],hyper_params,Float32(10000.0), 20,1,nothing,true,false,15,labelss[1],0.0001)
-    labels = get_labels(dp)
-    avg_nmi = mutualinfo(Int.(labelss[1]),labels,normed=true)
-    for i=2:parts
-        run_model_streaming(dp,20,i*2,xs[i])
-        labels = get_labels(dp)
-        avg_nmi += mutualinfo(Int.(labelss[i]),labels,normed=true)
-    end
-    println("NMI: ",avg_nmi/parts)
+    # @everywhere Random.seed!(12345)
+    # x,labels,clusters = generate_mnmm_data(10^4,100,20,50)
+    # parts = 10
+    # xs = [x[:,i:parts:end] for i=1:parts]
+    # labelss = [labels[i:parts:end] for i=1:parts]
+    # hyper_params = DPMMSubClustersStreaming.multinomial_hyper(ones(Float32,100))
+    # dp = dp_parallel_streaming(xs[1],hyper_params,Float32(10000.0), 20,1,nothing,true,false,15,labelss[1],0.0001)
+    # labels = get_labels(dp)
+    # avg_nmi = mutualinfo(Int.(labelss[1]),labels,normed=true)
+    # for i=2:parts
+    #     run_model_streaming(dp,20,i*2,xs[i])
+    #     labels = get_labels(dp)
+    #     avg_nmi += mutualinfo(Int.(labelss[i]),labels,normed=true)
+    # end
+    # println("NMI: ",avg_nmi/parts)
 #     @test length(dp.group.local_clusters) > 1
 # end
 
@@ -131,19 +131,25 @@ end
            zeros(Float32,2),
            Float32(2),
            Matrix{Float32}(I, 2, 2)*1)
-           parts = 100
-           xs = [x[:,i:parts:end] for i=1:parts]
-           labelss = [labels[i:parts:end] for i=1:parts]
-           # First batch, initializing the model
-           dp = dp_parallel_streaming(xs[1],hyper_params,Float32(100.0), 2,1,nothing,true,false,10,labels,0.0001);
-           preds = get_labels(dp)
-           avg_nmi = mutualinfo(Int.(labelss[1]),preds,normed=true)
-           for i=2:parts
-               run_model_streaming(dp,2,i*2.0,xs[i])
-               preds = get_labels(dp)
-               avg_nmi += mutualinfo(Int.(labelss[i]),preds,normed=true)
-           end
-           println("NMI: ",avg_nmi/parts)
+        parts = 1000
+        xs = [x[:,i:parts:end] for i=1:parts]
+        labelss = [labels[i:parts:end] for i=1:parts]
+        # First batch, initializing the model
+        dp = dp_parallel_streaming(xs[1],hyper_params,Float32(100.0), 500,1,nothing,false,false,10,labels,0.0001);
+        all_preds = []
+        preds = get_labels(dp)
+        push!(all_preds,preds)
+        avg_nmi = mutualinfo(Int.(labelss[1]),preds,normed=true)
+        for i=2:parts
+            run_model_streaming(dp,1,i,xs[i])
+            preds = get_labels(dp)
+            push!(all_preds,preds)
+            avg_nmi += mutualinfo(Int.(labelss[i]),preds,normed=true)
+        end
+        all_labels = reduce(hcat,labelss)
+        all_preds = reduce(hcat,all_preds)
+        println("Avg NMI: ",avg_nmi/parts)
+        println("Full NMI: ",mutualinfo(Int.(all_labels),all_preds,normed=true))
     end
 
 # @testset "Multinomial Module And save load" begin

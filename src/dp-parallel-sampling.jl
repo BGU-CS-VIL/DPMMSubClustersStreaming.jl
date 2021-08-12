@@ -69,7 +69,7 @@ function init_first_clusters!(dp_model::dp_parallel_sampling, initial_cluster_co
     @sync update_suff_stats_posterior!(dp_model.group)
     global next_cluster_num = 2
     sample_clusters!(dp_model.group,false)
-    broadcast_cluster_params([create_thin_cluster_params(x) for x in dp_model.group.local_clusters],[1.0])
+    broadcast_cluster_params([create_thin_cluster_params(x,false) for x in dp_model.group.local_clusters],[1.0])
 end
 
 
@@ -568,7 +568,7 @@ dp_model, iter_count , nmi_score_history, liklihood_history, cluster_count_histo
 """
 function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
         local_hyper_params::distribution_hyper_params,
-        α_param::Float32,
+        α_param::Number,
          iters::Int64 = 20,
          init_clusters::Int64 = 1,
          seed = nothing,
@@ -587,7 +587,7 @@ function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
     global random_seed = seed
     global hyper_params = local_hyper_params
     global initial_clusters = init_clusters
-    global α = α_param
+    global α = Float32(α_param)
     global use_verbose = verbose
     global should_save_model = save_model
     global burnout_period = burnout
@@ -631,7 +631,6 @@ end
 
 function run_model_streaming(dp_model,iters, cur_time, new_data=nothing)    
     cur_parr_count = 10
-    cluster_count_history = []
     if isnothing(new_data) == false
         load_new_data!(dp_model,new_data)
     end
@@ -641,22 +640,38 @@ function run_model_streaming(dp_model,iters, cur_time, new_data=nothing)
     end
     global prev_iter
     for i=prev_iter:prev_iter+iters
-        final = false
+        final = i == prev_iter+iters
+        # final = false
         no_more_splits = false
         prev_time = time()
         group_step(dp_model.group, no_more_splits, final, i==1,cur_time)
         iter_time = time() - prev_time
         push!(iter_count,iter_time)
         push!(cluster_count_history,length(dp_model.group.local_clusters))
-        if use_verbose
-            push!(liklihood_history,calculate_posterior(dp_model))
+        push!(liklihood_history,calculate_posterior(dp_model))
+        if use_verbose            
             println("Iteration: " * string(i) * " || Clusters count: " *
                 string(cluster_count_history[end]) *
                 " || Log posterior: " * string(liklihood_history[end]) *
                 " || Iter Time:" * string(iter_time) *
                  " || Total time:" * string(sum(iter_count)))
-        else
-            push!(liklihood_history,1)
+        end
+        if (cur_time == 0) & (length(liklihood_history) > 25)
+            reductions = 0
+            cluster_mod = 0
+            for i=1:24
+                if (liklihood_history[end-i+1] < liklihood_history[end-i])
+                    reductions +=1
+                end
+                if (cluster_count_history[end-i+1] != cluster_count_history[end-i])
+                    cluster_mod +=1
+                end
+            end
+            # println(reductions,"   ",liklihood_history[end] < liklihood_history[end-24],"   ",cluster_mod)
+            # println(liklihood_history[end] < liklihood_history[end-24])
+            if (liklihood_history[end] < liklihood_history[end-24]) & (reductions > 12) & (cluster_mod == 0)
+                break
+            end
         end
     end
     prev_iter+= iters+1

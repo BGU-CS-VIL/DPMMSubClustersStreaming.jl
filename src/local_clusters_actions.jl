@@ -100,8 +100,14 @@ function sample_labels_worker!(labels::AbstractArray{Int64,1},
     log_weights = log.(clusters_weights)
     parr = zeros(Float32,length(indices), length(clusters_vector))
     tic = time()
-    for (k,cluster) in enumerate(clusters_vector)
-        log_likelihood!(reshape((@view parr[:,k]),:,1), pts,cluster.cluster_dist)
+    if final
+        for (k,cluster) in enumerate(clusters_vector)
+            posterior_predictive!(reshape((@view parr[:,k]),:,1), pts,cluster.posterior_hyperparams)
+        end
+    else    
+        for (k,cluster) in enumerate(clusters_vector)
+            log_likelihood!(reshape((@view parr[:,k]),:,1), pts,cluster.cluster_dist)
+        end
     end
     for (k,v) in enumerate(clusters_weights)
         parr[:,k] .+= log(v)
@@ -424,11 +430,12 @@ function sample_clusters!(group::local_group, first::Bool)
     end
 end
 
-function create_thin_cluster_params(cluster::local_cluster)
+function create_thin_cluster_params(cluster::local_cluster, final::Bool)
     return thin_cluster_params(cluster.cluster_params.cluster_params.distribution,
         cluster.cluster_params.cluster_params_l.distribution,
         cluster.cluster_params.cluster_params_r.distribution,
-        cluster.cluster_params.lr_weights)
+        cluster.cluster_params.lr_weights,
+        final ? cluster.cluster_params.cluster_params.posterior_hyperparams : nothing)
 end
 
 function remove_empty_clusters_worker!(labels, pts_count)
@@ -541,7 +548,7 @@ end
 
 function group_step(group::local_group, no_more_splits::Bool, final::Bool,first::Bool,cur_time::Number)
     sample_clusters!(group,false)
-    broadcast_cluster_params([create_thin_cluster_params(x) for x in group.local_clusters],group.weights)
+    broadcast_cluster_params([create_thin_cluster_params(x,final) for x in group.local_clusters],group.weights)
     global global_time = cur_time
     sample_labels!(group, (hard_clustering ? true : final), no_more_splits)
     sample_sub_clusters!(group)
