@@ -37,17 +37,18 @@ function init_model_from_data(all_data)
     if random_seed != nothing
         @eval @everywhere Random.seed!($random_seed)
     end
+    to_arr = procs == 1 ? identity : distribute 
     if use_verbose
         println("Loading and distributing data:")
-        @time data = distribute(all_data)
+        @time data = to_arr(all_data)
     else
-        data = distribute(all_data)
+        data = to_arr(all_data)
     end
 
     total_dim = size(data,2)
     model_hyperparams = model_hyper_params(hyper_params,α,total_dim)
-    labels = distribute(rand(1:initial_clusters,(size(data,2))) .+ ((outlier_mod > 0) ? 1 : 0))
-    labels_subcluster = distribute(rand(1:2,(size(data,2))))
+    labels = to_arr(rand(1:initial_clusters,(size(data,2))) .+ ((outlier_mod > 0) ? 1 : 0))
+    labels_subcluster = to_arr(rand(1:2,(size(data,2))))
     group = local_group(model_hyperparams,data,labels,labels_subcluster,local_cluster[],Float32[])
     return dp_parallel_sampling(model_hyperparams,group)
 end
@@ -578,6 +579,7 @@ function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
          gt = nothing,
          epsilon = 0.00001,
          kernel_func = RBFKernel(),
+        #  kernel_func = (x,y) -> 2.0^(-(y-x)),
          max_clusters = Inf,
          outlier_weight = 0,
          outlier_params = nothing
@@ -615,21 +617,22 @@ end
 
 
 function load_new_data!(dp_model,new_data)
+    to_arr = procs == 1 ? identity : distribute 
     if use_verbose
         println("Loading and distributing data:")
-        @time data = distribute(new_data)
+        @time data = to_arr(new_data)
     else
-        data = distribute(new_data)
+        data = to_arr(new_data)
     end    
     max_cluster = length(dp_model.group.local_clusters)
-    labels = distribute(rand(1:max_cluster,(size(data,2))))
-    labels_subcluster = distribute(rand(1:2,(size(data,2))))
+    labels = to_arr(rand(1:max_cluster,(size(data,2))))
+    labels_subcluster = to_arr(rand(1:2,(size(data,2))))
     dp_model.group.points = data
     dp_model.group.labels = labels
     dp_model.group.labels_subcluster = labels_subcluster
 end
 
-function run_model_streaming(dp_model,iters, cur_time, new_data=nothing)    
+function run_model_streaming(dp_model,iters, cur_time, new_data=nothing,use_pred=true)    
     cur_parr_count = 10
     if isnothing(new_data) == false
         load_new_data!(dp_model,new_data)
@@ -644,7 +647,7 @@ function run_model_streaming(dp_model,iters, cur_time, new_data=nothing)
         # final = false
         no_more_splits = false
         prev_time = time()
-        group_step(dp_model.group, no_more_splits, final, i==1,cur_time)
+        group_step(dp_model.group, no_more_splits, final & use_pred, i==1,cur_time)
         iter_time = time() - prev_time
         push!(iter_count,iter_time)
         push!(cluster_count_history,length(dp_model.group.local_clusters))
@@ -681,6 +684,15 @@ end
 
 function get_labels(dp_model)
     labels = Array(dp_model.group.labels)
+    translation = [x.cluster_num for x in dp_model.group.local_clusters]
+    return translation[labels]
+end
+
+
+function predict(dp_model,data)
+    weights = [x.points_count for x in dp_model.group.local_clusters] .+ dp_model.model_hyperparams.α
+    weights ./= sum(weights)    
+    labels = predict_points(data,[x.cluster_params.cluster_params for x in dp_model.group.local_clusters],weights)
     translation = [x.cluster_num for x in dp_model.group.local_clusters]
     return translation[labels]
 end

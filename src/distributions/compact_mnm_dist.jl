@@ -1,8 +1,8 @@
-struct compact_mnm_dist <: distibution_sample
+using LinearAlgebra
+using Distributions
+struct compact_mnm_dist <: distribution_sample
     α::AbstractArray{Float64,1}
 end
-
-
 
 #topic_modeling_dist
 function log_likelihood!(r::AbstractArray,x::AbstractArray, distibution_sample::compact_mnm_dist , group::Int64 = -1)

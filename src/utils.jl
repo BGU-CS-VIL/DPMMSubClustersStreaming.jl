@@ -89,6 +89,9 @@ function suff_stats_aggregation(suff_statistics_l::Vector{Tuple{sufficient_stati
     index_l,index_r = 1,1
     cur_time = 0
     suff_stats = Vector{Tuple{sufficient_statistics,Number}}()
+    if length(suff_statistics_l) != length(suff_statistics_r)
+        println("OH NOES THE DEVIL IS UPON US")
+    end
     while cur_time <= max_age
         ss_vector = []
         if index_l <= length(suff_statistics_l) && suff_statistics_l[index_l][2] == cur_time
@@ -111,3 +114,20 @@ function suff_stats_aggregation(suff_statistics_l::Vector{Tuple{sufficient_stati
     return suff_stats
 end
 
+# function suff_stats_aggregation(suff_statistics_l::Vector{Tuple{sufficient_statistics,Number}},suff_statistics_r::Vector{Tuple{sufficient_statistics,Number}})
+#     return vcat(suff_statistics_l,suff_statistics_r)
+# end
+
+
+# function suff_stats_aggregation(suff_statistics_l::Vector{Tuple{sufficient_statistics,Number}},suff_statistics_r::Vector{Tuple{sufficient_statistics,Number}})
+#     max_age = maximum(vcat([x[2] for x in suff_statistics_l],[x[2] for x in suff_statistics_r]))
+#     index_l,index_r = 1,1
+#     cur_time = 0
+#     suff_stats = Vector{Tuple{sufficient_statistics,Number}}()
+           
+#     for i=1:length(suff_statistics_l)
+#         push!(suff_stats,(aggregate_suff_stats(suff_statistics_l[i][1],suff_statistics_r[i][1]),suff_statistics_l[i][2]))
+#     end
+
+#     return suff_stats
+# end

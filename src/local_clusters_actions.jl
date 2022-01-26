@@ -97,9 +97,7 @@ function sample_labels_worker!(labels::AbstractArray{Int64,1},
     indices = localindices(points)[2]
     lbls = localpart(labels)
     pts = localpart(points)
-    log_weights = log.(clusters_weights)
     parr = zeros(Float32,length(indices), length(clusters_vector))
-    tic = time()
     if final
         for (k,cluster) in enumerate(clusters_vector)
             posterior_predictive!(reshape((@view parr[:,k]),:,1), pts,cluster.posterior_hyperparams)
@@ -118,6 +116,20 @@ function sample_labels_worker!(labels::AbstractArray{Int64,1},
     else
         sample_log_cat_array!(lbls,parr)
     end
+end
+
+
+function predict_points(points::AbstractArray{Float32,2},clusters,clusters_weights)
+    lbls = zeros(Int64,size(points)[2])
+    parr = zeros(Float32,length(lbls), length(clusters))
+    for (k,cluster) in enumerate(clusters)
+        posterior_predictive!(reshape((@view parr[:,k]),:,1), points,cluster.posterior_hyperparams)
+    end    
+    for (k,v) in enumerate(clusters_weights)
+        parr[:,k] .+= log(v)
+    end
+    lbls .= mapslices(argmax, parr, dims= [2])[:]
+    return lbls
 end
 
 
@@ -284,7 +296,11 @@ function split_cluster_local!(group::local_group, cluster::local_cluster, index:
     cluster.cluster_params = create_splittable_from_params(cluster.cluster_params.cluster_params_l, group.model_hyperparams.α)    
     l_split.points_count = sum([post_kernel(x[2],global_time)*x[1].N for x in l_split.cluster_params.cluster_params.suff_statistics])
     cluster.points_count = sum([post_kernel(x[2],global_time)*x[1].N for x in cluster.cluster_params.cluster_params.suff_statistics])
-    l_split.cluster_num = next_cluster_num
+    if l_split.points_count > cluster.points_count
+        cluster.cluster_num = next_cluster_num
+    else
+        l_split.cluster_num = next_cluster_num
+    end
     next_cluster_num += 1
     group.local_clusters[new_index] = l_split
 end
