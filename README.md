@@ -98,8 +98,7 @@ If you use this code for your work, please cite the following:
 @inproceedings{dinari2022streaming,
   title={Sampling in Dirichlet Process Mixture Models for Clustering Streaming Data},
   author={Dinari, Or and  Freifeld, Oren},
-  booktitle={Proceedings of The 25th International Conference on Artificial Intelligence and Statistics},
-  pages={518--525},
+  booktitle={International Conference on Artificial Intelligence and Statistics},
   year={2022}
 }
 ```
