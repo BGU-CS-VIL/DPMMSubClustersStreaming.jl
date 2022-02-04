@@ -95,11 +95,11 @@ Contributions, feature requests, suggestion etc.. are welcomed.
 If you use this code for your work, please cite the following:
 
 ```
-@inproceedings{dinari2019distributed,
-  title={Distributed MCMC Inference in Dirichlet Process Mixture Models Using Julia},
-  author={Dinari, Or and Yu, Angel and Freifeld, Oren and Fisher III, John W},
-  booktitle={2019 19th IEEE/ACM International Symposium on Cluster, Cloud and Grid Computing (CCGRID)},
+@inproceedings{dinari2022streaming,
+  title={Sampling in Dirichlet Process Mixture Models for Clustering Streaming Data},
+  author={Dinari, Or and  Freifeld, Oren},
+  booktitle={Proceedings of The 25th International Conference on Artificial Intelligence and Statistics},
   pages={518--525},
-  year={2019}
+  year={2022}
 }
 ```
