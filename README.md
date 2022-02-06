@@ -86,6 +86,14 @@ In the above example, we initially generate `10^6` points, samples from 10 3D Ga
 We then split it to 10000 parts, create the model hyper params (Normal Inverse Wishart) and start clustering the first batch.
 We then iterate over all the batches, feeding each 1 at time of `i*0.5`, and storing the NMI, which we later use to show the average NMI.
 
+### Datasets
+In the paper we have curated several datasets, end added various types of concept drifts (see the paper for full details).
+They can all be accessed via the following link:
+https://drive.google.com/drive/folders/1smT0TdMcLQSMI2PLo9DJ3CfwPKyZXwjs?usp=sharing
+
+The datasets are in CSV format, where the last column is the label.
+
+
 ### Misc
 
 For any questions: dinari@post.bgu.ac.il
