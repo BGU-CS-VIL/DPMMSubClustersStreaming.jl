@@ -1,6 +1,11 @@
 # DPMMSubClustersStreaming.jl
 This is the code repository for the *Julia* package (with an optional [Python wrapper](https://github.com/BGU-CS-VIL/dpmmpythonStreaming)) that corresponds to our paper, [Sampling in Dirichlet Process Mixture Models for Clustering Streaming Data](), AISTATS 2022.
 
+<br>
+<p align="center">
+<img src="appended.gif" alt="Streaming DPGMM">
+</p>
+
 ## Requirements
 This package was developed and tested on *Julia 1.0.3*, prior versions will not work.
 The following dependencies are required:
