@@ -68,23 +68,27 @@ At any point, the lastest label assignment can be retrieved via `get_labels(mode
 ### Example
 
 ```
-    x,labels,clusters = generate_gaussian_data(10^6,3,10,100.0)
-    parts = 10000
-    xs = [x[:,i:parts:end] for i=1:parts]
-    labelss = [labels[i:parts:end] for i=1:parts]
-    hyper_params = DPMMSubClustersStreaming.niw_hyperparams(Float32(1.0),
-               zeros(Float32,3),
-               Float32(5),
-               Matrix{Float32}(I, 3, 3)*1)
-    dp = dp_parallel_streaming(xs[1],hyper_params,Float32(10000000.0), 1,1,nothing,true,false,15,labelss[1],0.0001)
-    labels = get_labels(dp)
-    avg_nmi = mutualinfo(Int.(labelss[1]),labels,normed=true)
-    for i=2:parts
-        run_model_streaming(dp,1,i*0.5,xs[i])
-        labels = get_labels(dp)
-        avg_nmi += mutualinfo(Int.(labelss[i]),labels,normed=true)
-    end
-    println("NMI: ",avg_nmi/parts)    
+using Clustering
+using LinearAgebra
+using DPMMSubClustersStreaming
+
+x,labels,clusters = generate_gaussian_data(10^6,3,10,100.0)
+parts = 10000
+xs = [x[:,i:parts:end] for i=1:parts]
+labelss = [labels[i:parts:end] for i=1:parts]
+hyper_params = DPMMSubClustersStreaming.niw_hyperparams(Float32(1.0),
+       zeros(Float32,3),
+       Float32(5),
+       Matrix{Float32}(I, 3, 3)*1)
+dp = dp_parallel_streaming(xs[1],hyper_params,Float32(10000000.0), 1,1,nothing,true,false,15,labelss[1],0.0001)
+labels = get_labels(dp)
+avg_nmi = mutualinfo(Int.(labelss[1]),labels,normed=true)
+for i=2:parts
+run_model_streaming(dp,1,i*0.5,xs[i])
+labels = get_labels(dp)
+avg_nmi += mutualinfo(Int.(labelss[i]),labels,normed=true)
+end
+println("NMI: ",avg_nmi/parts)    
 ```
 
 In the above example, we initially generate `10^6` points, samples from 10 3D Gaussians.
