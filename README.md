@@ -98,7 +98,7 @@ We then split it to 10000 parts, create the model hyper params (Normal Inverse W
 We then iterate over all the batches, feeding each 1 at time of `i*0.5`, and storing the NMI, which we later use to show the average NMI.
 
 ### Datasets
-In the paper we have curated several datasets, end added various types of concept drifts (see the paper for full details).
+In the paper we have curated several datasets, and added various types of concept drifts (see the paper for full details).
 They can all be accessed via the following link:
 https://drive.google.com/drive/folders/1smT0TdMcLQSMI2PLo9DJ3CfwPKyZXwjs?usp=sharing
 
