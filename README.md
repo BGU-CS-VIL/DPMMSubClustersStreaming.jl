@@ -6,6 +6,8 @@ This is the code repository for the *Julia* package (with an optional [Python wr
 <img src="appended.gif" alt="Streaming DPGMM">
 </p>
 
+[Use this notebook to create the above video!](https://nbviewer.org/github/BGU-CS-VIL/DPMMSubClustersStreaming.jl/blob/main/examples/VideoSeg.ipynb)
+
 ## Requirements
 This package was developed and tested on *Julia 1.0.3*, prior versions will not work.
 The following dependencies are required:
