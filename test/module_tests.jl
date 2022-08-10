@@ -124,39 +124,39 @@ end
 
 
 
-# @testset "Streaming Data NIW 3" begin
-#         @everywhere Random.seed!(12345)
-#         x,labels,clusters = generate_gaussian_data(10^6,2,20,50.0)
-#         labels = Int32.(labels);
-#         hyper_params = DPMMSubClustersStreaming.niw_hyperparams(Float32(1.0),
-#            zeros(Float32,2),
-#            Float32(2),
-#            Matrix{Float32}(I, 2, 2)*1)
-#         parts = 1000
-#         xs = [x[:,i:parts:end] for i=1:parts]
-#         labelss = [labels[i:parts:end] for i=1:parts]
-#         # First batch, initializing the model
-#         dp = dp_parallel_streaming(xs[1],hyper_params,Float32(100.0), 30,1,nothing,true,false,10,labels,0.0001);
+@testset "Streaming Data NIW 3" begin
+        @everywhere Random.seed!(12345)
+        x,labels,clusters = generate_gaussian_data(10^6,2,20,50.0)
+        labels = Int32.(labels);
+        hyper_params = DPMMSubClustersStreaming.niw_hyperparams(Float32(1.0),
+           zeros(Float32,2),
+           Float32(2),
+           Matrix{Float32}(I, 2, 2)*1)
+        parts = 1000
+        xs = [x[:,i:parts:end] for i=1:parts]
+        labelss = [labels[i:parts:end] for i=1:parts]
+        # First batch, initializing the model
+        dp = dp_parallel_streaming(xs[1],hyper_params,Float32(100.0), 30,1,nothing,true,false,10,labels,0.0001,true);
         
-#         all_preds = []
-#         preds = get_labels(dp)
-#         preds2 = predict(dp,xs[1])
-#         println(preds == preds2)
-#         println(preds[1:100])
-#         println(preds2[1:100])
-#         push!(all_preds,preds)
-#         avg_nmi = mutualinfo(Int.(labelss[1]),preds,normed=true)
-#         for i=2:parts
-#             run_model_streaming(dp,1,i,xs[i])
-#             preds = get_labels(dp)
-#             push!(all_preds,preds)
-#             avg_nmi += mutualinfo(Int.(labelss[i]),preds,normed=true)
-#         end
-#         all_labels = reduce(hcat,labelss)
-#         all_preds = reduce(hcat,all_preds)
-#         println("Avg NMI: ",avg_nmi/parts)
-#         println("Full NMI: ",mutualinfo(Int.(all_labels),all_preds,normed=true))
-#     end
+        all_preds = []
+        preds = get_labels(dp)
+        preds2 = predict(dp,xs[1])
+        println(preds == preds2)
+        println(preds[1:100])
+        println(preds2[1:100])
+        push!(all_preds,preds)
+        avg_nmi = mutualinfo(Int.(labelss[1]),preds,normed=true)
+        for i=2:parts
+            run_model_streaming(dp,1,i,xs[i])
+            preds = get_labels(dp)
+            push!(all_preds,preds)
+            avg_nmi += mutualinfo(Int.(labelss[i]),preds,normed=true)
+        end
+        all_labels = reduce(hcat,labelss)
+        all_preds = reduce(hcat,all_preds)
+        println("Avg NMI: ",avg_nmi/parts)
+        println("Full NMI: ",mutualinfo(Int.(all_labels),all_preds,normed=true))
+    end
 
 # @testset "Multinomial Module And save load" begin
 #     @everywhere Random.seed!(12345)
