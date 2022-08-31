@@ -33,7 +33,7 @@ All prior data as been included previously, and is globaly accessed by the funct
 
 Returns an `dp_parallel_sampling` (e.g. the main data structure) with the configured parameters and data.
 """
-function init_model_from_data(all_data)
+function init_model_from_data(all_data,labels = nothing)
     if random_seed != nothing
         @eval @everywhere Random.seed!($random_seed)
     end
@@ -47,14 +47,19 @@ function init_model_from_data(all_data)
 
     total_dim = size(data,2)
     model_hyperparams = model_hyper_params(hyper_params,α,total_dim)
-    labels = to_arr(rand(1:initial_clusters,(size(data,2))) .+ ((outlier_mod > 0) ? 1 : 0))
+    if labels == nothing
+        labels = rand(1:initial_clusters,(size(data,2))) .+ ((outlier_mod > 0) ? 1 : 0)
+    end
+    labels = to_arr(labels)
     labels_subcluster = to_arr(rand(1:2,(size(data,2))))
     group = local_group(model_hyperparams,data,labels,labels_subcluster,local_cluster[],Float32[])
     return dp_parallel_sampling(model_hyperparams,group)
 end
 
 """
-    init_first_clusters!(dp_model::dp_parallel_sampling, initial_cluster_count::Int64))
+    init_first_clusters!(dp_model::dp_parallel_sampling, initial_cluster_count::Int64))    if warm_start || use_smart_splits
+        
+end
 
 Initialize the first clusters in the model, according to the number defined by initial_cluster_count
 
@@ -68,7 +73,7 @@ function init_first_clusters!(dp_model::dp_parallel_sampling, initial_cluster_co
         push!(dp_model.group.local_clusters, create_first_local_cluster(dp_model.group))
     end
     @sync update_suff_stats_posterior!(dp_model.group)
-    if use_smart_splits
+    if use_smart_splits 
         for i=1:length(dp_model.group.local_clusters)
             smart_cluster_init!(dp_model.group,i)
         end
@@ -589,6 +594,7 @@ function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
          gt = nothing,
          epsilon = 0.00001,
          smart_splits = false,
+         warm_start= nothing,
          kernel_func = RBFKernel(),
         #  kernel_func = (x,y) -> 2.0^(-(y-x)),
          max_clusters = Inf,
@@ -608,11 +614,14 @@ function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
     global max_num_of_clusters = max_clusters
     global outlier_mod = outlier_weight
     global outlier_hyper_params = outlier_params
-    dp_model = init_model_from_data(all_data)
+    dp_model = init_model_from_data(all_data, warm_start)
     global global_time = 0
     global leader_dict = get_node_leaders_dict()
     global ϵ=epsilon
     global use_smart_splits = smart_splits
+    if warm_start != nothing
+        initial_clusters = length(unique(warm_start))
+    end
     init_first_clusters!(dp_model, initial_clusters)
     if use_verbose
         println("Node Leaders:")
