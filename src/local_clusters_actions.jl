@@ -1,4 +1,6 @@
-function create_first_local_cluster(group::local_group)
+function create_first_local_cluster(group::local_group,cluster_num=1)
+    labels = Array(group.labels)
+    sub_labels = Array(group.labels_subcluster)
     suff = create_sufficient_statistics(group.model_hyperparams.distribution_hyper_params, [])
     post = group.model_hyperparams.distribution_hyper_params
     dist = sample_distribution(post)
@@ -6,13 +8,13 @@ function create_first_local_cluster(group::local_group)
     cpl = deepcopy(cp)
     cpr = deepcopy(cp)
     splittable = splittable_cluster_params(cp,cpl,cpr,[0.5,0.5], false,ones(burnout_period+5)*-Inf)
-    cp.suff_statistics[1][1].N = size(group.points,2)
-    cpl.suff_statistics[1][1].N = sum(group.labels_subcluster .== 1)
-    cpl.suff_statistics[1][1].N = sum(group.labels_subcluster .== 2)
+    cp.suff_statistics[1][1].N = sum(labels .== cluster_num)
+    cpl.suff_statistics[1][1].N = sum(sub_labels[labels .== cluster_num] .== 1)
+    cpl.suff_statistics[1][1].N = sum(sub_labels[labels .== cluster_num] .== 2)
     cluster = local_cluster(splittable, group.model_hyperparams.total_dim,
         cp.suff_statistics[1][1].N,
         cpl.suff_statistics[1][1].N,
-        cpl.suff_statistics[1][1].N,1)
+        cpl.suff_statistics[1][1].N,cluster_num)
     @sync for i in (nworkers()== 0 ? procs() : workers())
         @spawnat i split_first_cluster_worker!(group)
     end

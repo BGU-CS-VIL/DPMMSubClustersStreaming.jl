@@ -70,7 +70,7 @@ function init_first_clusters!(dp_model::dp_parallel_sampling, initial_cluster_co
         push!(dp_model.group.local_clusters, create_outlier_local_cluster(dp_model.group,outlier_hyper_params))
     end
     for i=1:initial_cluster_count
-        push!(dp_model.group.local_clusters, create_first_local_cluster(dp_model.group))
+        push!(dp_model.group.local_clusters, create_first_local_cluster(dp_model.group,i))
     end
     @sync update_suff_stats_posterior!(dp_model.group)
     if use_smart_splits 
