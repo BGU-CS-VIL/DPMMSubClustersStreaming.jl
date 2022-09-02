@@ -694,7 +694,7 @@ function run_model_streaming(dp_model,iters, cur_time, new_data=nothing,use_pred
             end
             # println(reductions,"   ",liklihood_history[end] < liklihood_history[end-24],"   ",cluster_mod)
             # println(liklihood_history[end] < liklihood_history[end-24])
-            if (liklihood_history[end] < liklihood_history[end-24]) & (reductions > 12) & (cluster_mod == 0)
+            if (prev_iter > 0) & (liklihood_history[end] < liklihood_history[end-24]) & (reductions > 12) & (cluster_mod == 0)
                 break
             end
         end
