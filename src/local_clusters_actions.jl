@@ -447,6 +447,7 @@ function sample_clusters!(group::local_group, first::Bool)
         push!(points_count, cluster.points_count)
     end
     push!(points_count, group.model_hyperparams.α)
+    points_count[points_count .== 0] .= 1
     group.weights = rand(Dirichlet(Float64.(points_count)))[1:end-1] .* (1 - outlier_mod)
     if outlier_mod > 0
         group.weights = vcat([outlier_mod],group.weights)
