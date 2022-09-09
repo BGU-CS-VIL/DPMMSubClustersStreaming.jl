@@ -681,6 +681,8 @@ function group_step(group::local_group, no_more_splits::Bool, final::Bool,first:
     sample_clusters!(group,false)
     broadcast_cluster_params([create_thin_cluster_params(x,final) for x in group.local_clusters],group.weights)
     global global_time = cur_time
+    global allow_splits
+    global allow_merges
     sample_labels!(group, (hard_clustering ? true : final), no_more_splits)
     sample_sub_clusters!(group)
     update_suff_stats_posterior!(group)
