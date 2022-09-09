@@ -1,7 +1,7 @@
 name = "DPMMSubClustersStreaming"
 uuid = "04147abc-ba09-4e01-921c-df05119b4dca"
 authors = ["Or Dinari <dinari.or@gmail.com>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"

@@ -595,6 +595,8 @@ function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
          epsilon = 0.00001,
          smart_splits = false,
          warm_start= nothing,
+         splits = true,
+         merges = true,
          kernel_func = RBFKernel(),
         #  kernel_func = (x,y) -> 2.0^(-(y-x)),
          max_clusters = Inf,
@@ -619,6 +621,8 @@ function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
     global leader_dict = get_node_leaders_dict()
     global ϵ=epsilon
     global use_smart_splits = smart_splits
+    global allow_splits = splits
+    global allow_merges = merges
     if warm_start != nothing
         initial_clusters = length(unique(warm_start))
     end
@@ -632,6 +636,7 @@ function dp_parallel_streaming(all_data::AbstractArray{Float32,2},
     global cluster_count_history = []
     global iter_count = []
     global prev_iter = 0
+    global split_history = []
 
     @eval @everywhere global hard_clustering = $hard_clustering
     return run_model_streaming(dp_model, iters,0)
@@ -700,7 +705,7 @@ function run_model_streaming(dp_model,iters, cur_time, new_data=nothing,use_pred
         end
     end
     prev_iter+= iters+1
-    return dp_model
+    return dp_model,split_history
 end
 
 
@@ -711,6 +716,12 @@ function get_labels(dp_model)
 end
 
 
+
+function get_sublabels(dp_model)
+    sublabels = Array(dp_model.group.labels_subcluster)
+    return sublabels
+end
+
 function predict(dp_model,data)
     weights = [x.points_count for x in dp_model.group.local_clusters] .+ dp_model.model_hyperparams.α
     weights ./= sum(weights)    
@@ -718,3 +729,4 @@ function predict(dp_model,data)
     translation = [x.cluster_num for x in dp_model.group.local_clusters]
     return translation[labels]
 end
+

@@ -374,12 +374,15 @@ function check_and_split!(group::local_group, final::Bool)
     new_index = length(group.local_clusters) + 1
     indices = Vector{Int64}()
     new_indices = Vector{Int64}()
+    global split_history
     resize!(group.local_clusters,Int64(length(group.local_clusters) + sum(split_arr)))
     for i=1:length(split_arr)
         if split_arr[i] == 1
 
             push!(indices, i)
             push!(new_indices, new_index)
+            push!(split_history,(i,new_index))
+
             split_cluster_local!(group, group.local_clusters[i],i,new_index)
             new_index += 1
         end
@@ -683,10 +686,14 @@ function group_step(group::local_group, no_more_splits::Bool, final::Bool,first:
     update_suff_stats_posterior!(group)
     reset_bad_clusters!(group)
     if no_more_splits == false
-        indices = []
-        indices = check_and_split!(group, final)
-        update_suff_stats_posterior!(group, indices)
-        check_and_merge!(group, final)
+        if allow_splits
+            indices = []
+            indices = check_and_split!(group, final)
+            update_suff_stats_posterior!(group, indices)
+        end
+        if allow_merges
+            check_and_merge!(group, final)
+        end
     end
     remove_empty_clusters!(group)
     return
