@@ -298,11 +298,9 @@ function split_cluster_local!(group::local_group, cluster::local_cluster, index:
     cluster.cluster_params = create_splittable_from_params(cluster.cluster_params.cluster_params_l, group.model_hyperparams.α)    
     l_split.points_count = sum([post_kernel(x[2],global_time)*x[1].N for x in l_split.cluster_params.cluster_params.suff_statistics])
     cluster.points_count = sum([post_kernel(x[2],global_time)*x[1].N for x in cluster.cluster_params.cluster_params.suff_statistics])
-    if l_split.points_count > cluster.points_count
-        cluster.cluster_num = next_cluster_num
-    else
-        l_split.cluster_num = next_cluster_num
-    end
+
+    l_split.cluster_num = next_cluster_num
+
     next_cluster_num += 1
     group.local_clusters[new_index] = l_split
 end
@@ -381,9 +379,10 @@ function check_and_split!(group::local_group, final::Bool)
 
             push!(indices, i)
             push!(new_indices, new_index)
-            push!(split_history,(i,new_index))
+
 
             split_cluster_local!(group, group.local_clusters[i],i,new_index)
+            push!(split_history,(group.local_clusters[i].cluster_num,group.local_clusters[new_index].cluster_num))
             new_index += 1
         end
     end

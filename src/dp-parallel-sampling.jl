@@ -661,6 +661,7 @@ end
 
 function run_model_streaming(dp_model,iters, cur_time, new_data=nothing,use_pred=true)    
     cur_parr_count = 10
+    global split_history = []
     if isnothing(new_data) == false
         load_new_data!(dp_model,new_data)
     end
